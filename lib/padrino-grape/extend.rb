@@ -1,58 +1,64 @@
 #encoding: UTF-8
 
+# Whenever we include a Grape::API app and
+# mount it via the official Padrino mounting
+# mechanism, it is automatically wrapped in
+# the ApplicationWrapper. This gives us a
+# lot of functionality and should be consulted
+# to understand what this is doing.
+#   https://github.com/padrino/padrino-framework/blob/master/padrino-core/lib/padrino-core/mounter.rb
+#
+# The downside is that we have to clone a lot of
+# those methods, because it's a wrapper
+#
+# There is also the reloader, that we need
+# to play nice with as a project.
+#
+#  https://github.com/padrino/padrino-framework/blob/master/padrino-core/lib/padrino-core/reloader.rb
+#
+
 module PadrinoGrape
-
   module Extend
-
-    def root
-      @_root ||= File.expand_path('..', __FILE__)
+    def reload?
+      true
     end
 
-    def dependencies
-      @_dependencies ||= [].map { |file| ::Dir[ ::File.join(self.root, file)] }.flatten
+    def setup_padrino_application(options)
+      Grape::API.logger = Padrino.logger
     end
 
-    def load_paths
-      @_load_paths ||= %w().map { |path| ::File.join(self.root, path) }
+    def reload
+      ""
     end
 
-    def require_dependencies
-      ::Padrino.set_load_paths(*load_paths)
-      ::Padrino.require_dependencies(dependencies, :force => true)
-    end
-
-    def setup_application!
-      return if @_configured
-      self.require_dependencies
-      @_configured = true
-      return @_configured
+    def call(env)
+      if Padrino::Reloader.changed?
+        reload!
+      end
+      super(env)
     end
 
     def reload!
+      self.reset!
+      @padrino_wrapper.require_dependencies
     end
 
-    def app_file
-      ""
-    end
-
-    def app_name
-      self.to_s
-    end
-
-    def public_folder
-      ""
-    end
-
+    # The default application writer (as of this)
+    # change, currently has a misnamed method.
+    # here, we alias it to make it work correctly.
+    #def prerequisites
+    #  dependencies
+    #end
   end
 
   def self.extended base
     base.__send__ :extend, ::PadrinoGrape::Extend
-    base.__send__ :setup_application!
+    #base.__send__ :setup_application!
   end
 
   def self.included base
     base.__send__ :extend, ::PadrinoGrape::Extend
-    base.__send__ :setup_application!
+    #base.__send__ :setup_application!
   end
 
 end

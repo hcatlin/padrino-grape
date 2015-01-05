@@ -20,6 +20,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   %W[ rake bundler ].each{  |gem_name| spec.add_development_dependency(gem_name) }
-  %W[ grape padrino ].each{ |gem_name| spec.add_dependency(gem_name) }
+  %W[ grape padrino grape-reload rack ].each{ |gem_name| spec.add_dependency(gem_name) }
 
 end
